@@ -71,12 +71,12 @@ class BPETokenizer:
             pretok_to_id[pretok_str] = len(pretoks)
             pretok_bytes = pretok_str.encode("utf-8")
             
-            for b in pretok_bytes:
-                bb = bytes([b])
-                if bb == b" ":
-                    raise ValueError(f"## b: {b}, bb: {bb}, self.vocab_inv[bytes([b])]: {self.vocab_inv[bytes([b])]}")
-                if bb not in self.vocab_inv:
-                    raise ValueError(f"## {b} not in vocab_inv: {bb}")
+            # for b in pretok_bytes:
+            #     bb = bytes([b])
+            #     if bb == b" ":
+            #         raise ValueError(f"## b: {b}, bb: {bb}, self.vocab_inv[bytes([b])]: {self.vocab_inv[bytes([b])]}")
+            #     if bb not in self.vocab_inv:
+            #         raise ValueError(f"## {b} not in vocab_inv: {bb}")
 
             pretok = [self.vocab_inv[bytes([b])] for b in pretok_bytes]    
             pretoks.append(PreToken(pretok, num, pretok_str))

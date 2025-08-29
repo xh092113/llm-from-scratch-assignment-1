@@ -1,6 +1,7 @@
 import os
 import json
 from .tokenizer import BPETokenizer
+from functools import lru_cache
 from .common import FIXTURES_PATH
 
 ## given 
@@ -53,69 +54,42 @@ def gpt2_bytes_to_unicode() -> dict[int, str]:
     return d
 
 
-def load_vocab_and_merges(
-    directory: str = FIXTURES_PATH / 'qwen3_tokenizer',
-) -> tuple[dict[int, bytes], list[tuple[bytes, bytes]]]:
-    vocab_path = os.path.join(directory, 'vocab.json')
-    merges_path = os.path.join(directory, 'merges.txt')
-    
-    ## load actual vocab and merge files, return vocab and merges after processing (bytes to unicode)
-    with open(vocab_path, 'r', encoding='utf-8') as f:
-        raw_vocab = json.load(f)
-    vocab = {v: k.encode('utf-8') for k, v in raw_vocab.items()}
+def load_qwen_vocab_and_merges():
+    vocab_path = FIXTURES_PATH / 'qwen3_tokenizer' / 'vocab.json'
+    merges_path = FIXTURES_PATH / 'qwen3_tokenizer' / 'merges.txt'
 
-    with open(merges_path, 'r', encoding='utf-8') as f:
-        merge_lines = f.read().split('\n')[1:-1]
+    gpt2_byte_decoder = {v: k for k, v in gpt2_bytes_to_unicode().items()}
+    with open(vocab_path) as vocab_f:
+        gpt2_vocab = json.load(vocab_f)
+    gpt2_bpe_merges = []
+    with open(merges_path) as f:
+        for line in f:
+            if line.startswith("#version"):
+                continue
+            cleaned_line = line.rstrip()
+            if cleaned_line and len(cleaned_line.split(" ")) == 2:
+                gpt2_bpe_merges.append(tuple(cleaned_line.split(" ")))
+    vocab = {
+        gpt2_vocab_index: bytes([gpt2_byte_decoder[token] for token in gpt2_vocab_item])
+        for gpt2_vocab_item, gpt2_vocab_index in gpt2_vocab.items()
+    }
+
     merges = [
-        (s1.encode('utf-8'), s2.encode('utf-8'))
-        for merge_str in merge_lines
-        for s1, s2 in [tuple(merge_str.split())]
+        (
+            bytes([gpt2_byte_decoder[token] for token in merge_token_1]),
+            bytes([gpt2_byte_decoder[token] for token in merge_token_2]),
+        )
+        for merge_token_1, merge_token_2 in gpt2_bpe_merges
     ]
-
     return vocab, merges
 
 
-def load_tokenizer_from_dir(
-    # directory: str = FIXTURES_PATH / 'qwen3_tokenizer',
-    # pattern: str = r"""'(?i:[sdmt]|ll|ve|re)|[^\r\n\p{L}\p{N}]?+\p{L}+|\p{N}{1,3}| ?[^\s\p{L}\p{N}]++[\r\n]*|\s*[\r\n]|\s+(?!\S)|\s+"""
-) -> BPETokenizer:
-    """
-    Loads tokenizer files from a directory and instantiates a BPETokenizer.
-
-    Args:
-        directory (str): The path to the directory containing 'vocab.json',
-                         'merges.txt', and 'tokenizer_config.json'.
-
-    Returns:
-        An instantiated BPETokenizer.
-
-    Do not use AutoTokenizer.
-    """
-
-    ## write bytes to unicode here
-    ## 
-
-    vocab = ...
-    merges = ...
-
+def load_qwen_tokenizer_from_dir() -> BPETokenizer:
+    vocab, merges = load_qwen_vocab_and_merges()
+    pattern: str = r"""'(?:[sdmt]|ll|ve|re)| ?\p{L}+| ?\p{N}+| ?[^\s\p{L}\p{N}]+|\s+(?!\S)|\s+"""
 
     # raise NotImplementedError
 
-    vocab_path = os.path.join(directory, 'vocab.json')
-    merges_path = os.path.join(directory, 'merges.txt')
-
-    with open(vocab_path, 'r', encoding='utf-8') as f:
-        raw_vocab = json.load(f)
-    vocab = {v: k.encode('utf-8') for k, v in raw_vocab.items()}
-
-    with open(merges_path, 'r', encoding='utf-8') as f:
-        merge_lines = f.read().split('\n')[1:-1]
-    merges = [
-        (s1.encode('utf-8'), s2.encode('utf-8'))
-        for merge_str in merge_lines
-        for s1, s2 in [tuple(merge_str.split())]
-    ]
-    
     return BPETokenizer(pattern=pattern, vocab=vocab, merges=merges)
 
 
@@ -126,7 +100,7 @@ def encode_file_with_qwen_tokenizer(
     Reads text from an input file, encodes it using the qwen tokenizer, and 
     returns the list of token IDs.
     """
-    tokenizer = create_tokenizer_from_dir()
+    tokenizer = load_qwen_tokenizer_from_dir()
 
     # raise NotImplementedError
     
@@ -135,13 +109,13 @@ def encode_file_with_qwen_tokenizer(
     return tokenizer.encode(text)
 
 
-def decode_file_with_qwen_tokenizer(
+def decode_sequence_with_qwen_tokenizer(
     token_ids: list[int],
 ) -> str:
     """
     Decodes a list of token IDs using the qwen tokenizer and returns the decoded text.
     """
-    tokenizer = create_tokenizer_from_dir()
+    tokenizer = load_qwen_tokenizer_from_dir()
 
     # raise NotImplementedError
 

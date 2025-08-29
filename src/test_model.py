@@ -3,17 +3,7 @@ import numpy
 import torch
 import torch.nn.functional as F
 
-from .adapters import (
-    run_multihead_self_attention_with_rope,
-    run_rope,
-    run_silu,
-    run_multihead_self_attention,
-    run_swiglu,
-    run_rmsnorm,
-    run_scaled_dot_product_attention,
-    run_transformer_block,
-    run_transformer_lm,
-    run_linear, 
+from .model import (
     run_embedding,
 )
 
