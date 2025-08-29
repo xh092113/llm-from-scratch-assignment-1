@@ -1,0 +1,508 @@
+============================= test session starts ==============================
+platform linux -- Python 3.11.13, pytest-8.4.1, pluggy-1.6.0
+rootdir: /homes/gws/lxh22/CS336/llm-from-scratch-assignment-1
+plugins: jaxtyping-0.3.2
+collected 16 items
+
+tests/test_tokenizer.py ......FFFFFFFFFF                                 [100%]
+
+=================================== FAILURES ===================================
+_________________________ test_roundtrip_ascii_string __________________________
+
+    def test_roundtrip_ascii_string():
+        tokenizer = get_tokenizer_from_vocab_merges_path(
+            vocab_path=VOCAB_PATH,
+            merges_path=MERGES_PATH,
+        )
+        test_string = "Hello, how are you?"
+>       encoded_ids = tokenizer.encode(test_string)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_tokenizer.py:172: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <tests.tokenizer.BPETokenizer object at 0x7feeb9208510>
+text = 'Hello, how are you?'
+
+    def encode(self, text: str) -> list[int]:
+        """
+        Encode an input text into a sequence of token IDs.
+        """
+        ## pre-tokenize the text
+    
+        PAT = self.pattern
+        # r"""'(?:[sdmt]|ll|ve|re)| ?\p{L}+| ?\p{N}+| ?[^\s\p{L}\p{N}]+|\s+(?!\S)|\s+"""
+    
+        cnt = Counter()
+        for match in re.finditer(PAT, text):
+            pretok_str = match.group(0)
+            cnt[pretok_str] += 1
+    
+        # print(f"## cnt: {cnt}")
+    
+        pretok_to_id = {}
+        pretoks = []
+        for pretok_str, num in cnt.items():
+            pretok_to_id[pretok_str] = len(pretoks)
+            pretok_bytes = pretok_str.encode("utf-8")
+    
+            for b in pretok_bytes:
+                bb = bytes([b])
+                if bb == b" ":
+>                   raise ValueError(f"## b: {b}, bb: {bb}, self.vocab_inv[bytes([b])]: {self.vocab_inv[bytes([b])]}")
+E                   ValueError: ## b: 32, bb: b' ', self.vocab_inv[bytes([b])]: 220
+
+tests/tokenizer.py:77: ValueError
+______________________ test_ascii_string_matches_tiktoken ______________________
+
+    def test_ascii_string_matches_tiktoken():
+        reference_tokenizer = tiktoken.get_encoding("gpt2")
+        tokenizer = get_tokenizer_from_vocab_merges_path(
+            vocab_path=VOCAB_PATH,
+            merges_path=MERGES_PATH,
+            # special_tokens=["<|endoftext|>"]
+        )
+        test_string = "Hello, how are you?"
+    
+        reference_ids = reference_tokenizer.encode(test_string)
+>       ids = tokenizer.encode(test_string)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_tokenizer.py:187: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <tests.tokenizer.BPETokenizer object at 0x7feeb941afd0>
+text = 'Hello, how are you?'
+
+    def encode(self, text: str) -> list[int]:
+        """
+        Encode an input text into a sequence of token IDs.
+        """
+        ## pre-tokenize the text
+    
+        PAT = self.pattern
+        # r"""'(?:[sdmt]|ll|ve|re)| ?\p{L}+| ?\p{N}+| ?[^\s\p{L}\p{N}]+|\s+(?!\S)|\s+"""
+    
+        cnt = Counter()
+        for match in re.finditer(PAT, text):
+            pretok_str = match.group(0)
+            cnt[pretok_str] += 1
+    
+        # print(f"## cnt: {cnt}")
+    
+        pretok_to_id = {}
+        pretoks = []
+        for pretok_str, num in cnt.items():
+            pretok_to_id[pretok_str] = len(pretoks)
+            pretok_bytes = pretok_str.encode("utf-8")
+    
+            for b in pretok_bytes:
+                bb = bytes([b])
+                if bb == b" ":
+>                   raise ValueError(f"## b: {b}, bb: {bb}, self.vocab_inv[bytes([b])]: {self.vocab_inv[bytes([b])]}")
+E                   ValueError: ## b: 32, bb: b' ', self.vocab_inv[bytes([b])]: 220
+
+tests/tokenizer.py:77: ValueError
+________________________ test_roundtrip_unicode_string _________________________
+
+    def test_roundtrip_unicode_string():
+        tokenizer = get_tokenizer_from_vocab_merges_path(
+            vocab_path=VOCAB_PATH,
+            merges_path=MERGES_PATH,
+        )
+        test_string = "Héllò hôw are ü? 🙃"
+>       encoded_ids = tokenizer.encode(test_string)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_tokenizer.py:202: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <tests.tokenizer.BPETokenizer object at 0x7feeb78ffb90>
+text = 'Héllò hôw are ü? 🙃'
+
+    def encode(self, text: str) -> list[int]:
+        """
+        Encode an input text into a sequence of token IDs.
+        """
+        ## pre-tokenize the text
+    
+        PAT = self.pattern
+        # r"""'(?:[sdmt]|ll|ve|re)| ?\p{L}+| ?\p{N}+| ?[^\s\p{L}\p{N}]+|\s+(?!\S)|\s+"""
+    
+        cnt = Counter()
+        for match in re.finditer(PAT, text):
+            pretok_str = match.group(0)
+            cnt[pretok_str] += 1
+    
+        # print(f"## cnt: {cnt}")
+    
+        pretok_to_id = {}
+        pretoks = []
+        for pretok_str, num in cnt.items():
+            pretok_to_id[pretok_str] = len(pretoks)
+            pretok_bytes = pretok_str.encode("utf-8")
+    
+            for b in pretok_bytes:
+                bb = bytes([b])
+                if bb == b" ":
+>                   raise ValueError(f"## b: {b}, bb: {bb}, self.vocab_inv[bytes([b])]: {self.vocab_inv[bytes([b])]}")
+E                   ValueError: ## b: 32, bb: b' ', self.vocab_inv[bytes([b])]: 220
+
+tests/tokenizer.py:77: ValueError
+_____________________ test_unicode_string_matches_tiktoken _____________________
+
+    def test_unicode_string_matches_tiktoken():
+        reference_tokenizer = tiktoken.get_encoding("gpt2")
+        tokenizer = get_tokenizer_from_vocab_merges_path(
+            vocab_path=VOCAB_PATH,
+            merges_path=MERGES_PATH,
+            # special_tokens=["<|endoftext|>"]
+        )
+        test_string = "Héllò hôw are ü? 🙃"
+    
+        reference_ids = reference_tokenizer.encode(test_string)
+>       ids = tokenizer.encode(test_string)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_tokenizer.py:217: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <tests.tokenizer.BPETokenizer object at 0x7feeb7a402d0>
+text = 'Héllò hôw are ü? 🙃'
+
+    def encode(self, text: str) -> list[int]:
+        """
+        Encode an input text into a sequence of token IDs.
+        """
+        ## pre-tokenize the text
+    
+        PAT = self.pattern
+        # r"""'(?:[sdmt]|ll|ve|re)| ?\p{L}+| ?\p{N}+| ?[^\s\p{L}\p{N}]+|\s+(?!\S)|\s+"""
+    
+        cnt = Counter()
+        for match in re.finditer(PAT, text):
+            pretok_str = match.group(0)
+            cnt[pretok_str] += 1
+    
+        # print(f"## cnt: {cnt}")
+    
+        pretok_to_id = {}
+        pretoks = []
+        for pretok_str, num in cnt.items():
+            pretok_to_id[pretok_str] = len(pretoks)
+            pretok_bytes = pretok_str.encode("utf-8")
+    
+            for b in pretok_bytes:
+                bb = bytes([b])
+                if bb == b" ":
+>                   raise ValueError(f"## b: {b}, bb: {bb}, self.vocab_inv[bytes([b])]: {self.vocab_inv[bytes([b])]}")
+E                   ValueError: ## b: 32, bb: b' ', self.vocab_inv[bytes([b])]: 220
+
+tests/tokenizer.py:77: ValueError
+____________________________ test_address_roundtrip ____________________________
+
+    def test_address_roundtrip():
+        tokenizer = get_tokenizer_from_vocab_merges_path(
+            vocab_path=VOCAB_PATH,
+            merges_path=MERGES_PATH,
+        )
+        with open(FIXTURES_PATH / "address.txt") as f:
+            corpus_contents = f.read()
+    
+>       ids = tokenizer.encode(corpus_contents)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_tokenizer.py:232: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <tests.tokenizer.BPETokenizer object at 0x7feeb6938d50>
+text = 'Four score and seven years ago our fathers brought forth, on this continent, a new nation, conceived in Liberty, and ... birth of freedom—and that government of the people, by the people, for the people, shall not perish from the earth.\n'
+
+    def encode(self, text: str) -> list[int]:
+        """
+        Encode an input text into a sequence of token IDs.
+        """
+        ## pre-tokenize the text
+    
+        PAT = self.pattern
+        # r"""'(?:[sdmt]|ll|ve|re)| ?\p{L}+| ?\p{N}+| ?[^\s\p{L}\p{N}]+|\s+(?!\S)|\s+"""
+    
+        cnt = Counter()
+        for match in re.finditer(PAT, text):
+            pretok_str = match.group(0)
+            cnt[pretok_str] += 1
+    
+        # print(f"## cnt: {cnt}")
+    
+        pretok_to_id = {}
+        pretoks = []
+        for pretok_str, num in cnt.items():
+            pretok_to_id[pretok_str] = len(pretoks)
+            pretok_bytes = pretok_str.encode("utf-8")
+    
+            for b in pretok_bytes:
+                bb = bytes([b])
+                if bb == b" ":
+>                   raise ValueError(f"## b: {b}, bb: {bb}, self.vocab_inv[bytes([b])]: {self.vocab_inv[bytes([b])]}")
+E                   ValueError: ## b: 32, bb: b' ', self.vocab_inv[bytes([b])]: 220
+
+tests/tokenizer.py:77: ValueError
+________________________ test_address_matches_tiktoken _________________________
+
+    def test_address_matches_tiktoken():
+        reference_tokenizer = tiktoken.get_encoding("gpt2")
+        tokenizer = get_tokenizer_from_vocab_merges_path(
+            vocab_path=VOCAB_PATH,
+            merges_path=MERGES_PATH,
+        )
+        corpus_path = FIXTURES_PATH / "address.txt"
+        with open(corpus_path) as f:
+            corpus_contents = f.read()
+        reference_ids = reference_tokenizer.encode(corpus_contents)
+>       ids = tokenizer.encode(corpus_contents)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_tokenizer.py:246: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <tests.tokenizer.BPETokenizer object at 0x7feeb6c713d0>
+text = 'Four score and seven years ago our fathers brought forth, on this continent, a new nation, conceived in Liberty, and ... birth of freedom—and that government of the people, by the people, for the people, shall not perish from the earth.\n'
+
+    def encode(self, text: str) -> list[int]:
+        """
+        Encode an input text into a sequence of token IDs.
+        """
+        ## pre-tokenize the text
+    
+        PAT = self.pattern
+        # r"""'(?:[sdmt]|ll|ve|re)| ?\p{L}+| ?\p{N}+| ?[^\s\p{L}\p{N}]+|\s+(?!\S)|\s+"""
+    
+        cnt = Counter()
+        for match in re.finditer(PAT, text):
+            pretok_str = match.group(0)
+            cnt[pretok_str] += 1
+    
+        # print(f"## cnt: {cnt}")
+    
+        pretok_to_id = {}
+        pretoks = []
+        for pretok_str, num in cnt.items():
+            pretok_to_id[pretok_str] = len(pretoks)
+            pretok_bytes = pretok_str.encode("utf-8")
+    
+            for b in pretok_bytes:
+                bb = bytes([b])
+                if bb == b" ":
+>                   raise ValueError(f"## b: {b}, bb: {bb}, self.vocab_inv[bytes([b])]: {self.vocab_inv[bytes([b])]}")
+E                   ValueError: ## b: 32, bb: b' ', self.vocab_inv[bytes([b])]: 220
+
+tests/tokenizer.py:77: ValueError
+____________________________ test_german_roundtrip _____________________________
+
+    def test_german_roundtrip():
+        tokenizer = get_tokenizer_from_vocab_merges_path(
+            vocab_path=VOCAB_PATH,
+            merges_path=MERGES_PATH,
+        )
+        with open(FIXTURES_PATH / "german.txt") as f:
+            corpus_contents = f.read()
+    
+>       ids = tokenizer.encode(corpus_contents)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_tokenizer.py:261: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <tests.tokenizer.BPETokenizer object at 0x7feeb5b683d0>
+text = 'Die Leland Stanford Junior University (kurz Stanford University oder Stanford, Spitzname „Die Farm“) ist eine private...ät eingeschrieben und studierten an einer der sieben Fakultäten. Ihr Präsident war bis 2023 Marc Tessier-Lavigne.[2]\n'
+
+    def encode(self, text: str) -> list[int]:
+        """
+        Encode an input text into a sequence of token IDs.
+        """
+        ## pre-tokenize the text
+    
+        PAT = self.pattern
+        # r"""'(?:[sdmt]|ll|ve|re)| ?\p{L}+| ?\p{N}+| ?[^\s\p{L}\p{N}]+|\s+(?!\S)|\s+"""
+    
+        cnt = Counter()
+        for match in re.finditer(PAT, text):
+            pretok_str = match.group(0)
+            cnt[pretok_str] += 1
+    
+        # print(f"## cnt: {cnt}")
+    
+        pretok_to_id = {}
+        pretoks = []
+        for pretok_str, num in cnt.items():
+            pretok_to_id[pretok_str] = len(pretoks)
+            pretok_bytes = pretok_str.encode("utf-8")
+    
+            for b in pretok_bytes:
+                bb = bytes([b])
+                if bb == b" ":
+>                   raise ValueError(f"## b: {b}, bb: {bb}, self.vocab_inv[bytes([b])]: {self.vocab_inv[bytes([b])]}")
+E                   ValueError: ## b: 32, bb: b' ', self.vocab_inv[bytes([b])]: 220
+
+tests/tokenizer.py:77: ValueError
+_________________________ test_german_matches_tiktoken _________________________
+
+    def test_german_matches_tiktoken():
+        reference_tokenizer = tiktoken.get_encoding("gpt2")
+        tokenizer = get_tokenizer_from_vocab_merges_path(
+            vocab_path=VOCAB_PATH,
+            merges_path=MERGES_PATH,
+        )
+        corpus_path = FIXTURES_PATH / "german.txt"
+        with open(corpus_path) as f:
+            corpus_contents = f.read()
+        reference_ids = reference_tokenizer.encode(corpus_contents)
+>       ids = tokenizer.encode(corpus_contents)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_tokenizer.py:275: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <tests.tokenizer.BPETokenizer object at 0x7feeb5d98ad0>
+text = 'Die Leland Stanford Junior University (kurz Stanford University oder Stanford, Spitzname „Die Farm“) ist eine private...ät eingeschrieben und studierten an einer der sieben Fakultäten. Ihr Präsident war bis 2023 Marc Tessier-Lavigne.[2]\n'
+
+    def encode(self, text: str) -> list[int]:
+        """
+        Encode an input text into a sequence of token IDs.
+        """
+        ## pre-tokenize the text
+    
+        PAT = self.pattern
+        # r"""'(?:[sdmt]|ll|ve|re)| ?\p{L}+| ?\p{N}+| ?[^\s\p{L}\p{N}]+|\s+(?!\S)|\s+"""
+    
+        cnt = Counter()
+        for match in re.finditer(PAT, text):
+            pretok_str = match.group(0)
+            cnt[pretok_str] += 1
+    
+        # print(f"## cnt: {cnt}")
+    
+        pretok_to_id = {}
+        pretoks = []
+        for pretok_str, num in cnt.items():
+            pretok_to_id[pretok_str] = len(pretoks)
+            pretok_bytes = pretok_str.encode("utf-8")
+    
+            for b in pretok_bytes:
+                bb = bytes([b])
+                if bb == b" ":
+>                   raise ValueError(f"## b: {b}, bb: {bb}, self.vocab_inv[bytes([b])]: {self.vocab_inv[bytes([b])]}")
+E                   ValueError: ## b: 32, bb: b' ', self.vocab_inv[bytes([b])]: 220
+
+tests/tokenizer.py:77: ValueError
+______________________ test_tinystories_sample_roundtrip _______________________
+
+    def test_tinystories_sample_roundtrip():
+        tokenizer = get_tokenizer_from_vocab_merges_path(
+            vocab_path=VOCAB_PATH,
+            merges_path=MERGES_PATH,
+        )
+        with open(FIXTURES_PATH / "tinystories_sample.txt") as f:
+            corpus_contents = f.read()
+    
+>       ids = tokenizer.encode(corpus_contents)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_tokenizer.py:290: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <tests.tokenizer.BPETokenizer object at 0x7feeb4d92510>
+text = '\nOnce upon a time there was a little boy named Ben. Ben loved to explore the world around him. He saw many amazing t... had lots of fun. Lucy knew that even if others ignore her friend, the spirit was real and they could play together.\n'
+
+    def encode(self, text: str) -> list[int]:
+        """
+        Encode an input text into a sequence of token IDs.
+        """
+        ## pre-tokenize the text
+    
+        PAT = self.pattern
+        # r"""'(?:[sdmt]|ll|ve|re)| ?\p{L}+| ?\p{N}+| ?[^\s\p{L}\p{N}]+|\s+(?!\S)|\s+"""
+    
+        cnt = Counter()
+        for match in re.finditer(PAT, text):
+            pretok_str = match.group(0)
+            cnt[pretok_str] += 1
+    
+        # print(f"## cnt: {cnt}")
+    
+        pretok_to_id = {}
+        pretoks = []
+        for pretok_str, num in cnt.items():
+            pretok_to_id[pretok_str] = len(pretoks)
+            pretok_bytes = pretok_str.encode("utf-8")
+    
+            for b in pretok_bytes:
+                bb = bytes([b])
+                if bb == b" ":
+>                   raise ValueError(f"## b: {b}, bb: {bb}, self.vocab_inv[bytes([b])]: {self.vocab_inv[bytes([b])]}")
+E                   ValueError: ## b: 32, bb: b' ', self.vocab_inv[bytes([b])]: 220
+
+tests/tokenizer.py:77: ValueError
+______________________ test_tinystories_matches_tiktoken _______________________
+
+    def test_tinystories_matches_tiktoken():
+        reference_tokenizer = tiktoken.get_encoding("gpt2")
+        tokenizer = get_tokenizer_from_vocab_merges_path(
+            vocab_path=VOCAB_PATH,
+            merges_path=MERGES_PATH,
+            # special_tokens=["<|endoftext|>"]
+        )
+        corpus_path = FIXTURES_PATH / "tinystories_sample.txt"
+        with open(corpus_path) as f:
+            corpus_contents = f.read()
+        reference_ids = reference_tokenizer.encode(corpus_contents)
+>       ids = tokenizer.encode(corpus_contents)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_tokenizer.py:305: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <tests.tokenizer.BPETokenizer object at 0x7feeb4fc6bd0>
+text = '\nOnce upon a time there was a little boy named Ben. Ben loved to explore the world around him. He saw many amazing t... had lots of fun. Lucy knew that even if others ignore her friend, the spirit was real and they could play together.\n'
+
+    def encode(self, text: str) -> list[int]:
+        """
+        Encode an input text into a sequence of token IDs.
+        """
+        ## pre-tokenize the text
+    
+        PAT = self.pattern
+        # r"""'(?:[sdmt]|ll|ve|re)| ?\p{L}+| ?\p{N}+| ?[^\s\p{L}\p{N}]+|\s+(?!\S)|\s+"""
+    
+        cnt = Counter()
+        for match in re.finditer(PAT, text):
+            pretok_str = match.group(0)
+            cnt[pretok_str] += 1
+    
+        # print(f"## cnt: {cnt}")
+    
+        pretok_to_id = {}
+        pretoks = []
+        for pretok_str, num in cnt.items():
+            pretok_to_id[pretok_str] = len(pretoks)
+            pretok_bytes = pretok_str.encode("utf-8")
+    
+            for b in pretok_bytes:
+                bb = bytes([b])
+                if bb == b" ":
+>                   raise ValueError(f"## b: {b}, bb: {bb}, self.vocab_inv[bytes([b])]: {self.vocab_inv[bytes([b])]}")
+E                   ValueError: ## b: 32, bb: b' ', self.vocab_inv[bytes([b])]: 220
+
+tests/tokenizer.py:77: ValueError
+=========================== short test summary info ============================
+FAILED tests/test_tokenizer.py::test_roundtrip_ascii_string - ValueError: ## ...
+FAILED tests/test_tokenizer.py::test_ascii_string_matches_tiktoken - ValueErr...
+FAILED tests/test_tokenizer.py::test_roundtrip_unicode_string - ValueError: #...
+FAILED tests/test_tokenizer.py::test_unicode_string_matches_tiktoken - ValueE...
+FAILED tests/test_tokenizer.py::test_address_roundtrip - ValueError: ## b: 32...
+FAILED tests/test_tokenizer.py::test_address_matches_tiktoken - ValueError: #...
+FAILED tests/test_tokenizer.py::test_german_roundtrip - ValueError: ## b: 32,...
+FAILED tests/test_tokenizer.py::test_german_matches_tiktoken - ValueError: ##...
+FAILED tests/test_tokenizer.py::test_tinystories_sample_roundtrip - ValueErro...
+FAILED tests/test_tokenizer.py::test_tinystories_matches_tiktoken - ValueErro...
+========================= 10 failed, 6 passed in 2.76s =========================
