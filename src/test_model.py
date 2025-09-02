@@ -5,6 +5,10 @@ import torch.nn.functional as F
 
 from .model import (
     run_embedding,
+    run_linear,
+    run_rmsnorm,
+    run_swiglu,
+    run_rope,
 )
 
 

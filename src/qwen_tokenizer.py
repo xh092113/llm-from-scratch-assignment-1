@@ -93,6 +93,10 @@ def load_qwen_tokenizer_from_dir() -> BPETokenizer:
     return BPETokenizer(pattern=pattern, vocab=vocab, merges=merges)
 
 
+## all things below are not given
+
+## test encode by npz
+
 def encode_file_with_qwen_tokenizer(
     input_path: str,
 ) -> list[int]:

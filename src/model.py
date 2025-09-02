@@ -5,7 +5,7 @@ from typing import Dict, Optional, Literal, Tuple
 from jaxtyping import Float, Int
 from dataclasses import dataclass
 import json
-
+from einops import einsum
 
 @dataclass
 class ModelArgs:
@@ -50,7 +50,7 @@ def run_embedding(
         Float[Tensor, "... d_model"]: Batch of embeddings returned by your Embedding layer.
     """
 
-    embed = Embedding(vocab_size, d_model, weights.device, weights.dtype)
+    embed = Embedding(vocab_size, d_model)
     embed.load_state_dict({"weight": weights})
     return embed(token_ids)
 
@@ -66,6 +66,31 @@ class Linear(nn.Module):
         return x @ self.weight.T
 
 
+def run_linear(
+    d_in: int,
+    d_out: int,
+    weights: Float[Tensor, " d_out d_in"],
+    in_features: Float[Tensor, " ... d_in"],
+) -> Float[Tensor, " ... d_out"]:
+    """
+    Given the weights of a Linear layer, compute the transformation of a batched input.
+
+    Args:
+        in_dim (int): The size of the input dimension
+        out_dim (int): The size of the output dimension
+        weights (Float[Tensor, "d_out d_in"]): The linear weights to use
+        in_features (Float[Tensor, "... d_in"]): The output tensor to apply the function to
+    
+    Returns:
+        Float[Tensor, "... d_out"]: The transformed output of your linear module.
+    """
+
+    linear = Linear(d_in, d_out)
+    linear.load_state_dict({"weight": weights}) ## note that state_dict only include nn.param
+    out_features = linear(in_features)
+    return out_features
+
+
 class RMSNorm(nn.Module):
     def __init__(self, dim: int, eps: float = 1e-6):
         super().__init__()
@@ -79,6 +104,32 @@ class RMSNorm(nn.Module):
         return y.to(input_type) * self.weight
 
 
+def run_rmsnorm(
+    d_model: int,
+    eps: float,
+    weights: Float[Tensor, " d_model"],
+    in_features: Float[Tensor, " ... d_model"],
+) -> Float[Tensor, " ... d_model"]:
+    """Given the weights of a RMSNorm affine transform,
+    return the output of running RMSNorm on the input features.
+
+    Args:
+        d_model (int): The dimensionality of the RMSNorm input.
+        eps: (float): A value added to the denominator for numerical stability.
+        weights (Float[Tensor, "d_model"]): RMSNorm weights.
+        in_features (Float[Tensor, "... d_model"]): Input features to run RMSNorm on. Can have arbitrary leading
+            dimensions.
+
+    Returns:
+        Float[Tensor,"... d_model"]: Tensor of with the same shape as `in_features` with the output of running
+        RMSNorm of the `in_features`.
+    """
+    
+    rmsnorm = RMSNorm(d_model, eps)
+    rmsnorm.load_state_dict({"weight": weights})
+    return rmsnorm(in_features)
+
+
 class MLP(nn.Module):
     def __init__(self, embed_dim: int, inter_dim: int):
         super().__init__()
@@ -88,6 +139,43 @@ class MLP(nn.Module):
     
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         return self.down_proj(F.silu(self.gate_proj(x)) * self.up_proj(x))
+    
+
+def run_swiglu(
+    d_model: int,
+    d_ff: int,
+    w1_weight: Float[Tensor, " d_ff d_model"],
+    w2_weight: Float[Tensor, " d_model d_ff"],
+    w3_weight: Float[Tensor, " d_ff d_model"],
+    in_features: Float[Tensor, " ... d_model"],
+) -> Float[Tensor, " ... d_model"]:
+    """Given the weights of a SwiGLU network, return
+    the output of your implementation with these weights.
+
+    Args:
+        d_model (int): Dimensionality of the feedforward input and output.
+        d_ff (int): Dimensionality of the up-project happening internally to your swiglu.
+        w1_weight (Float[Tensor, "d_ff d_model"]): Stored weights for W1
+        w2_weight (Float[Tensor, "d_model d_ff"]): Stored weights for W2
+        w3_weight (Float[Tensor, "d_ff d_model"]): Stored weights for W3
+        in_features (Float[Tensor, "... d_model"]): Input embeddings to the feed-forward layer.
+
+    Returns:
+        Float[Tensor, "... d_model"]: Output embeddings of the same shape as the input embeddings.
+    """
+    # Example:
+    # If your state dict keys match, you can use `load_state_dict()`
+    # swiglu.load_state_dict(weights)
+    # You can also manually assign the weights
+    # swiglu.w1.weight.data = w1_weight
+    # swiglu.w2.weight.data = w2_weight
+    # swiglu.w3.weight.data = w3_weight
+
+    swiglu = MLP(d_model, d_ff)
+    swiglu.gate_proj.load_state_dict({"weight": w1_weight})
+    swiglu.up_proj.load_state_dict({"weight": w3_weight})
+    swiglu.down_proj.load_state_dict({"weight": w2_weight})
+    return swiglu(in_features)
 
 
 class RotaryEmbedding(nn.Module):
@@ -100,13 +188,35 @@ class RotaryEmbedding(nn.Module):
     
     @torch.no_grad()
     def forward(self, position_ids: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
-        inv_freq_ = self.inv_freq[None, None, :].to(torch.float32)
-        position_ids_ = position_ids[:, :, None].to(torch.float32)
-
-        emb = inv_freq_ * position_ids_
+        emb = einsum(
+            position_ids.to(self.inv_freq.dtype), 
+            self.inv_freq, 
+            '... s, d -> ... s d'
+        )
         cos = emb.cos()
         sin = emb.sin()
         return cos, sin
+    
+
+def run_rope(
+    d_k: int,
+    theta: float,
+    token_positions: Int[Tensor, " ... sequence_length"],
+) -> Float[Tensor, " ... sequence_length d_k"]:
+    """
+    Run RoPE for a given input tensor.
+
+    Args:
+        d_k (int): Embedding dimension size for the query or key tensor.
+        theta (float): RoPE parameter.
+        max_seq_len (int): Maximum sequence length to pre-cache if your implementation does that.
+        in_query_or_key (Float[Tensor, "... sequence_length d_k"]): Input tensor to run RoPE on.
+        token_positions (Int[Tensor, "... sequence_length"]): Tensor of shape (batch_size, sequence_length) with the token positions
+    Returns:
+        Float[Tensor, " ... sequence_length d_k"]: Tensor with RoPEd input.
+    """
+    rope = RotaryEmbedding(d_k, theta)
+    return rope(token_positions)
     
 
 def apply_rotary_emb(x: torch.Tensor, cos: torch.Tensor, sin: torch.Tensor) -> torch.Tensor:
@@ -134,7 +244,7 @@ class KVCache:
         return self.cache[layer_idx]
 
 
-def scaled_dot_product_attention(
+def run_scaled_dot_product_attention(
     q: torch.Tensor, k: torch.Tensor, v: torch.Tensor,
     attention_mask: torch.Tensor) -> torch.Tensor:
     
@@ -184,10 +294,55 @@ class MHA(nn.Module):
         if past_key_values is not None:
             k, v = past_key_values.update(k, v, self.layer_idx)
         
-        attn_output = scaled_dot_product_attention(q, k, v, attention_mask)
+        attn_output = run_scaled_dot_product_attention(q, k, v, attention_mask)
         attn_output = self.o_proj(attn_output.view(*input_shape, -1))
         return attn_output
+    
         
+def run_multihead_self_attention_with_rope(
+    d_model: int,
+    num_heads: int,
+    max_seq_len: int,
+    theta: float,
+    q_proj_weight: Float[Tensor, " d_k d_in"],
+    k_proj_weight: Float[Tensor, " d_k d_in"],
+    v_proj_weight: Float[Tensor, " d_v d_in"],
+    o_proj_weight: Float[Tensor, " d_model d_v"],
+    in_features: Float[Tensor, " ... sequence_length d_in"],
+    token_positions: Int[Tensor, " ... sequence_length"] | None = None,
+) -> Float[Tensor, " ... sequence_length d_out"]:
+    """
+    Given the key, query, and value projection weights of a naive unbatched
+    implementation of multi-head attention, return the output of an optimized batched
+    implementation. This implementation should handle the key, query, and value projections
+    for all heads in a single matrix multiply.
+    This version of MHA should include RoPE.
+    In this case, the RoPE embedding dimension must be the head embedding dimension (d_model // num_heads).
+    See section 3.2.2 of Vaswani et al., 2017.
+
+    Args:
+        d_model (int): Dimensionality of the feedforward input and output.
+        num_heads (int): Number of heads to use in multi-headed attention.
+        max_seq_len (int): Maximum sequence length to pre-cache if your implementation does that.
+        theta (float): RoPE parameter.
+        q_proj_weight (Float[Tensor, "d_k d_in"]): Weights for the Q projection
+        k_proj_weight (Float[Tensor, "d_k d_in"]): Weights for the K projection
+        v_proj_weight (Float[Tensor, "d_k d_in"]): Weights for the V projection
+        o_proj_weight (Float[Tensor, "d_model d_v"]): Weights for the output projection
+        in_features (Float[Tensor, "... sequence_length d_in"]): Tensor to run your implementation on.
+        token_positions (Int[Tensor, " ... sequence_length"] | None): Optional tensor with the positions of the tokens
+
+    Returns:
+        Float[Tensor, " ... sequence_length d_out"]: Tensor with the output of running your optimized, batched multi-headed attention
+        implementation with the given QKV projection weights and input features.
+    """
+    myMHA = MHA(d_model, num_heads, theta, max_seq_len)
+    myMHA.q_proj.load_state_dict({"weight": q_proj_weight})
+    myMHA.k_proj.load_state_dict({"weight": k_proj_weight})
+    myMHA.v_proj.load_state_dict({"weight": v_proj_weight})
+    myMHA.o_proj.load_state_dict({"weight": o_proj_weight})
+    return myMHA(in_features, token_positions)
+
 
 class Block(nn.Module):
     def __init__(self, args: ModelArgs, layer_idx: int):

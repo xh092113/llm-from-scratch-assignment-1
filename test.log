@@ -2,64 +2,99 @@
 platform linux -- Python 3.11.13, pytest-8.4.1, pluggy-1.6.0
 rootdir: /home/coder66/Desktop/U4-A/CS336/llm-from-scratch-assignment-1
 plugins: jaxtyping-0.3.2
-collected 30 items / 5 errors / 29 deselected / 1 selected
+collected 31 items / 30 deselected / 1 selected
 
-==================================== ERRORS ====================================
-______________________ ERROR collecting src/test_data.py _______________________
-ImportError while importing test module '/home/coder66/Desktop/U4-A/CS336/llm-from-scratch-assignment-1/src/test_data.py'.
-Hint: make sure your test modules/packages have valid Python names.
-Traceback:
-../../../../miniconda3/envs/llm_from_scratch_hw1/lib/python3.11/importlib/__init__.py:126: in import_module
-    return _bootstrap._gcd_import(name[level:], package, level)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-src/test_data.py:7: in <module>
-    from .adapters import run_get_batch
-E   ModuleNotFoundError: No module named 'src.adapters'
-____________________ ERROR collecting src/test_nn_utils.py _____________________
-ImportError while importing test module '/home/coder66/Desktop/U4-A/CS336/llm-from-scratch-assignment-1/src/test_nn_utils.py'.
-Hint: make sure your test modules/packages have valid Python names.
-Traceback:
-../../../../miniconda3/envs/llm_from_scratch_hw1/lib/python3.11/importlib/__init__.py:126: in import_module
-    return _bootstrap._gcd_import(name[level:], package, level)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-src/test_nn_utils.py:5: in <module>
-    from .adapters import run_cross_entropy, run_gradient_clipping, run_softmax
-E   ModuleNotFoundError: No module named 'src.adapters'
-____________________ ERROR collecting src/test_optimizer.py ____________________
-ImportError while importing test module '/home/coder66/Desktop/U4-A/CS336/llm-from-scratch-assignment-1/src/test_optimizer.py'.
-Hint: make sure your test modules/packages have valid Python names.
-Traceback:
-../../../../miniconda3/envs/llm_from_scratch_hw1/lib/python3.11/importlib/__init__.py:126: in import_module
-    return _bootstrap._gcd_import(name[level:], package, level)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-src/test_optimizer.py:4: in <module>
-    from .adapters import get_adamw_cls, run_get_lr_cosine_schedule
-E   ModuleNotFoundError: No module named 'src.adapters'
-__________________ ERROR collecting src/test_serialization.py __________________
-ImportError while importing test module '/home/coder66/Desktop/U4-A/CS336/llm-from-scratch-assignment-1/src/test_serialization.py'.
-Hint: make sure your test modules/packages have valid Python names.
-Traceback:
-../../../../miniconda3/envs/llm_from_scratch_hw1/lib/python3.11/importlib/__init__.py:126: in import_module
-    return _bootstrap._gcd_import(name[level:], package, level)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-src/test_serialization.py:6: in <module>
-    from .adapters import get_adamw_cls, run_load_checkpoint, run_save_checkpoint
-E   ModuleNotFoundError: No module named 'src.adapters'
-____________________ ERROR collecting src/test_train_bpe.py ____________________
-ImportError while importing test module '/home/coder66/Desktop/U4-A/CS336/llm-from-scratch-assignment-1/src/test_train_bpe.py'.
-Hint: make sure your test modules/packages have valid Python names.
-Traceback:
-../../../../miniconda3/envs/llm_from_scratch_hw1/lib/python3.11/importlib/__init__.py:126: in import_module
-    return _bootstrap._gcd_import(name[level:], package, level)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-src/test_train_bpe.py:4: in <module>
-    from .adapters import run_train_bpe
-E   ModuleNotFoundError: No module named 'src.adapters'
+src/test_model.py F                                                      [100%]
+
+=================================== FAILURES ===================================
+__________________________________ test_rope ___________________________________
+
+numpy_snapshot = <src.conftest.NumpySnapshot object at 0x720a15130e90>
+in_embeddings = tensor([[[-0.9414,  1.2632, -0.1838,  ..., -0.1941,  0.0048, -1.3165],
+         [ 0.0204, -0.1652,  0.2109,  ...,  0.6...73, -0.5486,  ...,  1.5676, -1.1472, -1.5822],
+         [ 1.5936, -0.4113,  0.6037,  ..., -0.6494,  1.2858,  0.4321]]])
+d_model = 64, theta = 10000.0, n_queries = 12
+pos_ids = tensor([ 0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11])
+
+    def test_rope(numpy_snapshot, in_embeddings, d_model, theta, n_queries, pos_ids):
+        output = run_rope(
+            d_model, theta=theta, max_seq_len=n_queries, in_query_or_key=in_embeddings, token_positions=pos_ids
+        )
+>       numpy_snapshot.assert_match(output, atol=1e-6)
+
+src/test_model.py:223: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+src/conftest.py:181: in patched_assert_match
+    return original_assert_match(actual, test_name=test_name, force_update=force_update, rtol=rtol, atol=atol)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <src.conftest.NumpySnapshot object at 0x720a15130e90>
+actual = (tensor([[ 1.0000,  1.0000,  1.0000,  1.0000,  1.0000,  1.0000,  1.0000,  1.0000,
+          1.0000,  1.0000,  1.0000, ...487e-03,  6.1857e-03,  4.6386e-03,  3.4785e-03,  2.6085e-03,
+          1.9561e-03,  1.4669e-03]], dtype=torch.float64))
+test_name = 'test_rope', force_update = False, rtol = 0.0001, atol = 1e-06
+
+    def assert_match(
+        self,
+        actual: _A | dict[str, _A],
+        test_name: str,
+        force_update: bool = False,
+        rtol: float = 1e-4,
+        atol: float = 1e-2,
+    ):
+        """
+        Assert that the actual array(s) matches the snapshot.
+    
+        Args:
+            actual: Single NumPy array or dictionary of named arrays
+            test_name: The name of the test (used for the snapshot file)
+            update: If True, update the snapshot instead of comparing
+        """
+        snapshot_path = self._get_snapshot_path(test_name)
+    
+        # Convert single array to dictionary for consistent handling
+        arrays_dict = actual if isinstance(actual, dict) else {"array": actual}
+        arrays_dict = {
+            k: _canonicalize_array(v)
+            for k, v in arrays_dict.items()
+        }
+    
+    
+        # Load the snapshot
+        expected_arrays = dict(np.load(snapshot_path))
+    
+        # Verify all expected arrays are present
+        missing_keys = set(arrays_dict.keys()) - set(expected_arrays.keys())
+        if missing_keys:
+            raise AssertionError(f"Keys {missing_keys} not found in snapshot for {test_name}")
+    
+        # Verify all actual arrays are expected
+        extra_keys = set(expected_arrays.keys()) - set(arrays_dict.keys())
+        if extra_keys:
+            raise AssertionError(f"Snapshot contains extra keys {extra_keys} for {test_name}")
+    
+        # Compare all arrays
+        for key in arrays_dict:
+>           np.testing.assert_allclose(
+                _canonicalize_array(arrays_dict[key]),
+                expected_arrays[key],
+                rtol=rtol,
+                atol=atol,
+                err_msg=f"Array '{key}' does not match snapshot for {test_name}"
+            )
+E           AssertionError: 
+E           Not equal to tolerance rtol=0.0001, atol=1e-06
+E           Array 'array' does not match snapshot for test_rope
+E           (shapes (2, 12, 32), (4, 12, 64) mismatch)
+E            ACTUAL: array([[[ 1.000000e+00,  1.000000e+00,  1.000000e+00,  1.000000e+00,
+E                     1.000000e+00,  1.000000e+00,  1.000000e+00,  1.000000e+00,
+E                     1.000000e+00,  1.000000e+00,  1.000000e+00,  1.000000e+00,...
+E            DESIRED: array([[[-0.941417,  1.263247, -0.183769, ..., -0.194059,  0.004818,
+E                    -1.316472],
+E                   [ 0.150027, -0.072087, -0.197822, ...,  0.671586,  0.312369,...
+
+src/conftest.py:74: AssertionError
 =========================== short test summary info ============================
-ERROR src/test_data.py
-ERROR src/test_nn_utils.py
-ERROR src/test_optimizer.py
-ERROR src/test_serialization.py
-ERROR src/test_train_bpe.py
-!!!!!!!!!!!!!!!!!!! Interrupted: 5 errors during collection !!!!!!!!!!!!!!!!!!!!
-======================= 29 deselected, 5 errors in 1.41s =======================
+FAILED src/test_model.py::test_rope - AssertionError: 
+======================= 1 failed, 30 deselected in 2.13s =======================

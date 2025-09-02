@@ -41,6 +41,18 @@ def test_encode_decode_roundtrip(setup_test_environment):
     assert decoded_text == original_text, "Decoded text does not match the original text."
 
 
+def test_encoding_matches_huggingface(setup_test_environment):
+    """
+    Tests that the encoding function matches the Hugging Face tokenizer.
+    """
+    input_path = setup_test_environment["path"]
+    original_text = setup_test_environment["text"]
+
+    ## use npz to test matching
+
+    raise NotImplementedError
+    
+
 # @pytest.mark.parametrize("model_name", ["Qwen/Qwen1.5-0.5B"])
 # def test_encoding_matches_huggingface(setup_test_environment, model_name):
 #     """

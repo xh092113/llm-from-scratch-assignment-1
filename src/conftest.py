@@ -21,7 +21,7 @@ class NumpySnapshot:
     
     def __init__(
         self, 
-        snapshot_dir: str = "tests/_snapshots",
+        snapshot_dir: str = "src/_snapshots",
     ):
         self.snapshot_dir = Path(snapshot_dir)
         os.makedirs(self.snapshot_dir, exist_ok=True)
@@ -81,7 +81,7 @@ class NumpySnapshot:
 
 
 class Snapshot:
-    def __init__(self, snapshot_dir: str = "tests/_snapshots"):
+    def __init__(self, snapshot_dir: str = "src/_snapshots"):
         """
         Snapshot for arbitrary data types, saved as pickle files.
         """
